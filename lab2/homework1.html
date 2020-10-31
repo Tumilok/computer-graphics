@@ -46,13 +46,12 @@
 		renderer.autoClear = true;          // default
 		renderer.autoClearColor = true;     // default
 		
-		ctr = new THREE.OrbitControls( camera, renderer.domElement);
+		ctr = new THREE.OrbitControls(camera, renderer.domElement);
 
         createGroundPlane();
 
-        var cubeGeometry = new THREE.CubeGeometry(4, 4, 4);
-
         // create a cube made of MeshLambertMaterial
+        var cubeGeometry = new THREE.CubeGeometry(4, 4, 4);
         var cubeLambertMaterial = new THREE.MeshLambertMaterial({color: 0xff0000});
         var lambertCube = new THREE.Mesh(cubeGeometry, cubeLambertMaterial);
 
@@ -63,34 +62,11 @@
 
         // add the cube to the scene
         scene.add(lambertCube);
-
-        // create a cube made of MeshPhongMaterial
-        var cubePhongMaterial = new THREE.MeshPhongMaterial({color: 0x72efdd});
-        cubePhongMaterial.shininess = 90;
-        var phongCube = new THREE.Mesh(cubeGeometry, cubePhongMaterial);
         
-        phongCube.castShadow = true;
-        phongCube.receiveShadow = true;
+        var phongCube = getPhongCube(0x72efdd, 5, 0, 15);
+        var phongCube2 = getPhongCube(0x343fe, -15, 50, -10);
 
-        // position the cube
-        phongCube.position.set(5, 15, 0);
-
-        // add the cube to the scene
-        scene.add(phongCube);
-
-        var sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
-        var sphereMaterial = new THREE.MeshPhongMaterial({color: 0x7777ff});
-        sphereMaterial.shininess = 90;
-        var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-
-        sphere.castShadow = true;
-        sphere.receiveShadow = true;
-
-        // position the sphere
-        sphere.position.set(20, 0, 2);
-
-        // add the sphere to the scene
-        scene.add(sphere);
+        var sphere = getPhongSphere(0x7777ff, 20, 0, 2);
 
         // position and point the camera to the center of the scene
         camera.position.set(-25, 30, 25);
@@ -113,38 +89,12 @@
         spotLight.shadow.camera.near = 0.1;
         spotLight.shadow.camera.far = 150;
         spotLight.shadow.camera.fov = 60;
-        		
-        scene.add(spotLight);
 
-        // add spot light
-        var spotLightWithCone = new THREE.SpotLight(0xffffff, intensity = 1);
-        
-        spotLightWithCone.castShadow = true;
-        spotLightWithCone.angle = 0.90;
-        spotLightWithCone.target = phongCube;
+        createSpotLight(0xffffff, phongCube, -30, 50, 0);
+        createSpotLight(0xffffff, sphere, 30, 50, 50);
+        var cone1 = getCone(0x44ff44, -30, 50, 0);
+        var cone2 = getCone(0xffb703, 30, 50, 50);
 
-        spotLightWithCone.shadow.mapSize.width = 2 * 2048;
-        spotLightWithCone.shadow.mapSize.height = 2 * 2048;
-        spotLightWithCone.shadow.near = 0.1;
-
-        spotLightWithCone.position.set(-30, 50, 0);
-
-        scene.add(spotLightWithCone);
-
-        // add cone
-        var coneGeometry = new THREE.ConeGeometry(20, 50, 100);
-        coneGeometry.translate(0, -40, 0);
-        coneGeometry.rotateX(-Math.PI/2);
-        var coneMaterial = new THREE.MeshLambertMaterial({ opacity:0.6, color: 0x44ff44, transparent:true });
-        var cone = new THREE.Mesh(coneGeometry, coneMaterial);
-
-        cone.castShadow = false;
-        cone.receiveShadow = false;
-        cone.openEnded = true;
-
-        cone.position.set(-30, 50, 0);
-
-        scene.add(cone);
 
         // Showing light lines
         var helper = new THREE.CameraHelper( spotLight.shadow.camera );
@@ -180,13 +130,85 @@
             scene.add(plane);
         }
 
+        // get cube made from phong material
+        function getPhongCube(color, x, y, z) {
+            var cubeGeometry = new THREE.CubeGeometry(4, 4, 4);
+            var cubePhongMaterial = new THREE.MeshPhongMaterial({color: color});
+            cubePhongMaterial.shininess = 90;
+            var phongCube = new THREE.Mesh(cubeGeometry, cubePhongMaterial);
+            
+            phongCube.castShadow = true;
+            phongCube.receiveShadow = true;
+
+            // position the cube
+            phongCube.position.set(5, 15, 0);
+
+            // add the cube to the scene
+            scene.add(phongCube);
+
+            return phongCube;
+        }
+
+        // get sphere made fram phong material
+        function getPhongSphere(color, x, y, z) {
+            var sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
+            var sphereMaterial = new THREE.MeshPhongMaterial({color: color});
+            sphereMaterial.shininess = 90;
+            var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+            sphere.castShadow = true;
+            sphere.receiveShadow = true;
+
+            // position the sphere
+            sphere.position.set(x, y, z);
+
+            // add the sphere to the scene
+            scene.add(sphere);
+
+            return sphere;
+        }
+
+        function getCone(color, x, y, z) {
+            var coneGeometry = new THREE.ConeGeometry(10, 100, 100);
+            coneGeometry.translate(0, -40, 0);
+            coneGeometry.rotateX(-Math.PI/2);
+            var coneMaterial = new THREE.MeshLambertMaterial({ opacity:0.6, color: color, transparent:true });
+            var cone = new THREE.Mesh(coneGeometry, coneMaterial);
+
+            cone.castShadow = false;
+            cone.receiveShadow = false;
+            cone.openEnded = true;
+
+            cone.position.set(x, y, z);
+
+            scene.add(cone);
+
+            return cone;
+        }
+
+        function createSpotLight(color, target, x, y, z) {
+            var spotLight = new THREE.SpotLight(color, intensity = 1);
+        
+            spotLight.castShadow = true;
+            spotLight.angle = 0.90;
+            spotLight.target = target;
+
+            spotLight.shadow.mapSize.width = 2 * 2048;
+            spotLight.shadow.mapSize.height = 2 * 2048;
+            spotLight.shadow.near = 0.1;
+
+            spotLight.position.set(x, y, z);
+
+            scene.add(spotLight);
+        }
 
         render();
 
         function render() {
             stats.update();
 
-            cone.lookAt(phongCube.position)
+            cone1.lookAt(phongCube.position);
+            cone2.lookAt(sphere.position);
 
             // rotate the cubes around its axes
             lambertCube.rotation.x += controls.rotationSpeed;
@@ -198,6 +220,13 @@
             phongCube.rotation.x += controls.rotationSpeed;
             phongCube.rotation.y += controls.rotationSpeed;
             phongCube.rotation.z += controls.rotationSpeed;
+
+            phongCube2.position.x = 5*Math.cos(step) + 10;
+            phongCube2.position.y = 5*Math.sin(step) + 10;
+            phongCube2.position.z = 20;
+            phongCube2.rotation.x += controls.rotationSpeed;
+            phongCube2.rotation.y += controls.rotationSpeed;
+            phongCube2.rotation.z += controls.rotationSpeed;
 
             // bounce the sphere up and down
             step += controls.bouncingSpeed;
