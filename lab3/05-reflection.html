@@ -48,9 +48,11 @@ var clock = new THREE.Clock();
 
 // custom global variables
 var mirrorCube, mirrorCubeCamera; // for mirror material
+var mirrorCube2, mirrorCubeCamera2;
 var mirrorCube5, mirrorCube5Camera;
 var mirrorSphere, mirrorSphereCamera; // for mirror material
 var cube2, cube3, cube4, cube6;
+var sphere, sphere2;
 var step = 0;
 
 init();
@@ -129,9 +131,9 @@ function init()
 	scene.add( mirrorCubeCamera );
 	var mirrorCubeMaterial = new THREE.MeshBasicMaterial( { envMap: mirrorCubeCamera.renderTarget } );
 	mirrorCube = new THREE.Mesh( cubeGeom, mirrorCubeMaterial );
-	mirrorCube.position.set(-75,50,0);
+	mirrorCube.position.set(0,100,-300);
 	//mirrorCubeCamera.position = mirrorCube.position;    not working with new three.js
-	mirrorCubeCamera.position.set(-75,50,0);
+	mirrorCubeCamera.position.set(0,100,-300);
 	scene.add(mirrorCube);	
 	
 	var sphereGeom =  new THREE.SphereGeometry( 50, 32, 16 ); // radius, segmentsWidth, segmentsHeight
@@ -140,11 +142,53 @@ function init()
 	scene.add( mirrorSphereCamera );
 	var mirrorSphereMaterial = new THREE.MeshBasicMaterial( { envMap: mirrorSphereCamera.renderTarget } );
 	mirrorSphere = new THREE.Mesh( sphereGeom, mirrorSphereMaterial );
-	mirrorSphere.position.set(75,50,0);
+	mirrorSphere.position.set(0,50,0);
 	//mirrorSphereCamera.position = mirrorSphere.position;
-	mirrorSphereCamera.position.set(75,50,0);
+	mirrorSphereCamera.position.set(0,50,0);
 	scene.add(mirrorSphere);
 
+	// homework
+	function createMesh(geom, imageFile, bump_normal, is_bump) {
+		var texture = THREE.ImageUtils.loadTexture("textures/" + imageFile)
+		geom.computeVertexNormals();
+		var mat = new THREE.MeshPhongMaterial();
+		mat.map = texture;
+
+		if (is_bump && bump_normal) {
+			var bump = THREE.ImageUtils.loadTexture("textures/" + bump)
+			mat.bumpMap = bump;
+			mat.bumpScale = 0.2;
+		} else if (bump_normal) {
+			var normal = THREE.ImageUtils.loadTexture("textures/" + normal);
+			mat.normalMap = normal;
+		}
+
+		// create a multimaterial
+		var mesh = new THREE.Mesh(geom, mat);
+
+		return mesh;
+	}
+	
+	mirrorCubeCamera2 = new THREE.CubeCamera( 0.1, 5000, 512 );
+	scene.add( mirrorCubeCamera2 );
+	var mirrorCubeMaterial2 = new THREE.MeshBasicMaterial( { envMap: mirrorCubeCamera2.renderTarget } );
+	mirrorCube2 = new THREE.Mesh( cubeGeom, mirrorCubeMaterial2 );
+	mirrorCube2.position.set(0,100,300);
+	mirrorCubeCamera2.position.set(0,100,300);
+	scene.add(mirrorCube2);	
+	
+	sphere = createMesh(new THREE.SphereGeometry(60, 220, 220), "floor-wood.jpg");
+	sphere.position.set(0, 50, 0);
+	scene.add(sphere);
+
+	cube2 = createMesh(new THREE.CubeGeometry(200, 200, 30,1,1,1), "stone.jpg", "stone-bump.jpg", "bump");
+	cube2.position.set(-300, 250, 0);
+	scene.add(cube2);
+
+	sphere2 = createMesh(new THREE.SphereGeometry(40, 180, 180), "plaster.jpg", "plaster-normal.jpg");
+    sphere2.rotation.y = 0.5;
+    sphere2.position.set(300, 50, 300)
+    scene.add(sphere2);
 }
 
 function animate() 
@@ -160,10 +204,18 @@ function update()
 	{ 
 		// do something
 	}
+
+	if (mirrorSphere.position.y > 400) {
+		mirrorUpDown = 0;
+	}  else if (mirrorSphere.position.y < 200) {
+		mirrorUpDown = 1;
+	}
 	
 	controls.update();
 	stats.update();
 }
+
+var mirrorUpDown = 1;
 
 function render() 
 {
@@ -172,8 +224,33 @@ function render()
 	//    and apply it to the surface.
 	// need to hide surface before and after so that it does not
 	//    "get in the way" of the camera
+
+	step += 0.01;
+
+	sphere2.position.z = 400 * Math.sin(step*2);
+	sphere2.position.x = 400 * Math.cos(step*2);
+
+	sphere.position.y = 300 + (200 * Math.sin(step * 1.5));
+	sphere.position.z = 200 * Math.cos(step * 1.5);
+
+	cube2.rotation.x += 0.01;
+	cube2.rotation.y += 0.01;
+	cube2.rotation.z += 0.01;
+	
+	if (mirrorUpDown == 1) {
+		mirrorSphere.position.y += 1;
+		mirrorSphereCamera.position.set(0,mirrorSphere.position.y + 1,0);
+	} else {
+		mirrorSphere.position.y -= 1;
+		mirrorSphereCamera.position.set(0,mirrorSphere.position.y,0);
+	}
+
 	mirrorCube.visible = false;
 	mirrorCubeCamera.updateCubeMap( renderer, scene );
+	mirrorCube.visible = true;
+
+	mirrorCube.visible = false;
+	mirrorCubeCamera2.updateCubeMap( renderer, scene );
 	mirrorCube.visible = true;
 
 	mirrorSphere.visible = false;
